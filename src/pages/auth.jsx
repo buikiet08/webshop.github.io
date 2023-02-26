@@ -1,21 +1,65 @@
 import React, { useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { Navigate } from 'react-router-dom'
 import Button from '../components/Button'
 import Input from '../components/Input'
+import { USER_PATH } from '../config/path'
+import { useAsync } from '../hooks/useAsync'
+import { useAuth } from '../hooks/useAuth'
 import authService from '../services/authService'
+import { loginAction, registerAction } from '../store/authReducer'
 
 function Auth() {
+    const dispatch = useDispatch()
     const [form,setForm] = useState({})
+    const [formRegester,setFormRegester] = useState({})
+    const [errorMessage,setErrorMessage] = useState()
+    const [loading,setLoading] = useState(false)
 
+    const [erroRegisterrMessage,setErrorRegisterMessage] = useState()
+    const [loadingRegister,setLoadingRegister] = useState(false)
+    const { user } = useAuth()
+    console.log(user)
     
     const onSubmit = async (ev) => {
         ev.preventDefault();
-
-        if(form.username !== "" && form.password !== "") {
-            const result = await authService.login(form)
-            if (result) {
-                alert('đăng nhập thành công')
+        setLoading(true)
+        setErrorMessage('')
+        dispatch(loginAction({
+            form:form,
+            success: () => {
+                setLoading(false)
+            },
+            error: (err) => {
+                setLoading(false)
+                setErrorMessage(err.message)
             }
+        }))
+        
+    }
+    // const {excute,loading,error} = useAsync(() => authService.register)
+    const onRegester = async (ev) => {
+        ev.preventDefault();
+        if(formRegester.name !== "" && formRegester.username !== "" && formRegester.password !== "") {
+            // const result = await authService.login(form)
+            setLoadingRegister(true)
+            setErrorRegisterMessage('')
+            dispatch(registerAction({
+                form:formRegester,
+                success: () => {
+                    setLoadingRegister(false)
+                },
+                error: (err) => {
+                    setLoadingRegister(false)
+                    setErrorRegisterMessage(err.message || err.error)
+                }
+            }))
+        } else{
+            alert('bạn chưa nhập username và password')
         }
+    }
+    if(user) {
+        return <Navigate to={USER_PATH} />
     }
     return (
         <section className="py-12">
@@ -58,7 +102,7 @@ function Auth() {
                                         </div>
                                         <div className="col-12">
                                             {/* Button */}
-                                            <Button>
+                                            <Button disable={loading ? true : false}>
                                                 Sign In
                                             </Button>
                                         </div>
@@ -73,53 +117,25 @@ function Auth() {
                             <div className="card-body">
                                 {/* Heading */}
                                 <h6 className="mb-7">New Customer</h6>
+                                <p style={{color: '#ff0000'}}>{erroRegisterrMessage}</p>
                                 {/* Form */}
-                                <form>
+                                <form onSubmit={onRegester}>
                                     <div className="row">
                                         <div className="col-12">
-                                            {/* Email */}
-                                            <div className="form-group">
-                                                <label className="sr-only" htmlFor="registerFirstName">
-                                                    First Name *
-                                                </label>
-                                                <input className="form-control form-control-sm" id="registerFirstName" type="text" placeholder="First Name *" required />
-                                            </div>
+                                            {/* fulName */}
+                                            <Input onChange={ev => formRegester.name = ev.target.value} placeholder={'Full Name *'} type='text' ></Input>
                                         </div>
                                         <div className="col-12">
                                             {/* Email */}
-                                            <div className="form-group">
-                                                <label className="sr-only" htmlFor="registerLastName">
-                                                    Last Name *
-                                                </label>
-                                                <input className="form-control form-control-sm" id="registerLastName" type="text" placeholder="Last Name *" required />
-                                            </div>
-                                        </div>
-                                        <div className="col-12">
-                                            {/* Email */}
-                                            <div className="form-group">
-                                                <label className="sr-only" htmlFor="registerEmail">
-                                                    Email Address *
-                                                </label>
-                                                <input className="form-control form-control-sm" id="registerEmail" type="email" placeholder="Email Address *" required />
-                                            </div>
+                                            <Input onChange={ev => formRegester.username = ev.target.value} placeholder={'Email Address *'} type='email' ></Input>
                                         </div>
                                         <div className="col-12 col-md-6">
                                             {/* Password */}
-                                            <div className="form-group">
-                                                <label className="sr-only" htmlFor="registerPassword">
-                                                    Password *
-                                                </label>
-                                                <input className="form-control form-control-sm" id="registerPassword" type="password" placeholder="Password *" required />
-                                            </div>
+                                            <Input onChange={ev => formRegester.password = ev.target.value} placeholder={'Password *'} type='password' ></Input>
                                         </div>
                                         <div className="col-12 col-md-6">
                                             {/* Password */}
-                                            <div className="form-group">
-                                                <label className="sr-only" htmlFor="registerPasswordConfirm">
-                                                    Confirm Password *
-                                                </label>
-                                                <input className="form-control form-control-sm" id="registerPasswordConfirm" type="password" placeholder="Confrm Password *" required />
-                                            </div>
+                                            <Input onChange={ev => formRegester.confirmPassword = ev.target.value} placeholder={'Confirm Password *'} type='password' ></Input>
                                         </div>
                                         <div className="col-12 col-md-auto">
                                             {/* Link */}
@@ -141,9 +157,9 @@ function Auth() {
                                         </div>
                                         <div className="col-12">
                                             {/* Button */}
-                                            <button className="btn btn-sm btn-dark" type="submit">
-                                                Register
-                                            </button>
+                                            <Button disable={loadingRegister ? true : false}>
+                                                Regester
+                                            </Button>
                                         </div>
                                     </div>
                                 </form>
